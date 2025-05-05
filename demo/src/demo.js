@@ -1,4 +1,4 @@
-import { FocusEngine } from '../../dist/index.js';
+import { FocusEngine } from '../../src/index.ts';
 
 document.addEventListener('DOMContentLoaded', () => {
   // Reference to log panel content

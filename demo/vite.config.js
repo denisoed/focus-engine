@@ -8,7 +8,7 @@ export default defineConfig({
     port: 3000,
     open: true,
     watch: {
-      // Наблюдаем за изменениями в библиотеке тоже
+      // Watch for changes in the library too
       extraPaths: ['../src/**/*.ts', '../src/**/*.js'],
     },
   },

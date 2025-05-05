@@ -29,6 +29,8 @@ export interface FocusEngineOptions {
   autoInit?: boolean;
   /** Callback function when an element is selected (Enter key is pressed) */
   onSelect?: (element: HTMLElement) => void;
+  /** CSS class name to apply to the focused element */
+  focusClassName?: string;
 }
 
 /**
@@ -43,6 +45,8 @@ export class FocusEngine {
   private initialized: boolean = false;
   private keydownHandler: (event: KeyboardEvent) => void;
   private focusEventHandlers: Map<HTMLElement, EventListenerOrEventListenerObject> = new Map();
+  private focusClassName: string;
+  private previouslyFocusedElement: HTMLElement | null = null;
 
   /**
    * Creates a new instance of FocusEngine
@@ -52,6 +56,7 @@ export class FocusEngine {
     this.selector = options.selector || '.focusable[tabindex="0"]';
     this.tabIndexAttr = options.tabIndexAttr ?? 0;
     this.onSelectCallback = options.onSelect;
+    this.focusClassName = options.focusClassName || 'focus-engine-active';
 
     // Create a bound handler function that preserves this context
     this.keydownHandler = this.handleKeyDown.bind(this);
@@ -96,6 +101,9 @@ export class FocusEngine {
     setTimeout(() => {
       if (!document.activeElement || document.activeElement === document.body) {
         this.setInitialFocus();
+      } else if (this.focusableElements.includes(document.activeElement as HTMLElement)) {
+        // If focus is already on one of our elements, apply the class
+        this.updateFocusClass(document.activeElement as HTMLElement);
       }
     }, 300);
   }
@@ -113,11 +121,31 @@ export class FocusEngine {
     this.focusableElements.forEach((el, index) => {
       const handler = () => {
         this.currentFocusIndex = index;
+        this.updateFocusClass(el);
       };
 
       el.addEventListener('focus', handler);
       this.focusEventHandlers.set(el, handler);
+
+      // If element is already focused, apply the class
+      if (document.activeElement === el) {
+        this.updateFocusClass(el);
+      }
     });
+  }
+
+  /**
+   * Updates the CSS class on the focused element
+   */
+  private updateFocusClass(element: HTMLElement): void {
+    // Remove class from previously focused element
+    if (this.previouslyFocusedElement && this.previouslyFocusedElement !== element) {
+      this.previouslyFocusedElement.classList.remove(this.focusClassName);
+    }
+
+    // Add class to newly focused element
+    element.classList.add(this.focusClassName);
+    this.previouslyFocusedElement = element;
   }
 
   /**
@@ -140,6 +168,7 @@ export class FocusEngine {
         try {
           firstVisibleElement.focus({ preventScroll: false });
           this.currentFocusIndex = this.focusableElements.indexOf(firstVisibleElement);
+          this.updateFocusClass(firstVisibleElement);
         } catch (error) {
           console.error('Error setting initial focus:', error);
         }
@@ -147,6 +176,7 @@ export class FocusEngine {
         try {
           this.focusableElements[0].focus({ preventScroll: false });
           this.currentFocusIndex = 0;
+          this.updateFocusClass(this.focusableElements[0]);
         } catch (error) {
           console.error('Error setting fallback focus:', error);
         }
@@ -182,7 +212,9 @@ export class FocusEngine {
           this.focusableElements[this.currentFocusIndex].offsetParent !== null
         ) {
           try {
-            this.focusableElements[this.currentFocusIndex].focus({ preventScroll: false });
+            const element = this.focusableElements[this.currentFocusIndex];
+            element.focus({ preventScroll: false });
+            this.updateFocusClass(element);
           } catch (error) {
             console.error('Error restoring focus:', error);
             this.setInitialFocus();
@@ -190,6 +222,9 @@ export class FocusEngine {
         } else {
           this.setInitialFocus();
         }
+      } else {
+        // Ensure the class is applied to the currently focused element
+        this.updateFocusClass(currentFocusedElement);
       }
 
       // Arrow handling
@@ -211,6 +246,7 @@ export class FocusEngine {
           try {
             nextElement.focus({ preventScroll: false });
             this.currentFocusIndex = this.focusableElements.indexOf(nextElement);
+            this.updateFocusClass(nextElement);
           } catch (error) {
             console.error('Error focusing next element:', error);
           }
@@ -404,6 +440,13 @@ export class FocusEngine {
   public destroy(): void {
     document.removeEventListener('keydown', this.keydownHandler);
     this.clearFocusEventListeners();
+
+    // Remove focus class from the last focused element
+    if (this.previouslyFocusedElement) {
+      this.previouslyFocusedElement.classList.remove(this.focusClassName);
+      this.previouslyFocusedElement = null;
+    }
+
     this.initialized = false;
   }
 }

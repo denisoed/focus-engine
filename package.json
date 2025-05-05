@@ -1,6 +1,6 @@
 {
   "name": "focus-engine",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A TypeScript npm plugin",
   "type": "module",
   "main": "dist/index.js",
@@ -18,7 +18,9 @@
     "bump": "node scripts/bump-version.js",
     "bump:patch": "node scripts/bump-version.js patch",
     "bump:minor": "node scripts/bump-version.js minor",
-    "bump:major": "node scripts/bump-version.js major"
+    "bump:major": "node scripts/bump-version.js major",
+    "demo": "vite --config demo/vite.config.js",
+    "build:demo": "vite build --config demo/vite.config.js"
   },
   "keywords": [],
   "author": "",

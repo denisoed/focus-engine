@@ -37,6 +37,33 @@ new FocusEngine(options?: FocusOptions)
 
 -
 
+#### Focus Style Options
+
+```typescript
+interface FocusStyleOptions {
+  type?: 'default' | 'success' | 'warning' | 'error';
+  duration?: number;
+  color?: string;
+  opacity?: number;
+}
+```
+
+## Demo Application
+
+The project includes a demo application for testing the library.
+
+```bash
+# Start demo server with hot reload
+npm run demo
+
+# Build demo application
+npm run build:demo
+```
+
+The demo allows testing all functionality of the library
+
+See [demo/README.md](demo/README.md) for more details.
+
 ## Development
 
 ### Setup
@@ -79,15 +106,9 @@ npm run format
 
 ### Version Management
 
-This project includes automatic version incrementation when pushing to git.
-
-#### Automatic Version Bump on Git Push
-
-When you push changes to Git, a pre-push hook will automatically increment the patch version in package.json, commit the change, and continue with the push.
-
 #### Manual Version Management
 
-You can also manually control version bumps:
+You can manually control version bumps:
 
 ```bash
 # Bump patch version (0.1.0 -> 0.1.1)

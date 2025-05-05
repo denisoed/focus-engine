@@ -1,0 +1,133 @@
+body {
+  background-color: #282c34;
+  color: white;
+  font-family: sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+  padding: 20px; /* Добавим отступы для body */
+  box-sizing: border-box;
+}
+
+.container {
+  display: flex;
+  flex-wrap: wrap; /* Позволяет элементам переноситься */
+  align-items: flex-start; /* Выравнивание по верху для элементов разной высоты */
+  gap: 20px; /* Пространство между элементами */
+  padding: 20px;
+  max-width: 700px; /* Немного увеличим максимальную ширину */
+  border: 2px solid #61dafb;
+  border-radius: 10px;
+  background-color: #20232a;
+}
+
+/* Базовый стиль для фокусируемых элементов */
+.focusable {
+  background-color: #61dafb;
+  color: #20232a;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease,
+    border-color 0.1s ease;
+  outline: none; /* Убираем стандартный контур */
+  border: 3px solid transparent; /* Резервируем место для рамки фокуса */
+  box-sizing: border-box; /* Учитываем рамку в размерах */
+  font-weight: bold;
+  text-align: center;
+  padding: 5px; /* Небольшой внутренний отступ */
+}
+
+/* Классы для разных размеров */
+.item-small {
+  width: 80px;
+  height: 50px;
+}
+.item-medium {
+  width: 120px;
+  height: 70px;
+}
+.item-large {
+  width: 150px;
+  height: 90px;
+}
+.item-wide {
+  width: 260px; /* Примерно как два средних + gap */
+  height: 60px;
+}
+.item-tall {
+  width: 100px;
+  height: 140px; /* Примерно как два средних по высоте + gap */
+}
+
+/* Стиль для элемента в фокусе */
+.focusable:focus {
+  border-color: #ffdd57; /* Яркая рамка для фокуса */
+  box-shadow: 0 0 15px rgba(255, 221, 87, 0.7);
+  transform: scale(1.05); /* Немного увеличиваем */
+  z-index: 10; /* Чтобы увеличенный элемент был поверх других */
+  position: relative; /* Для работы z-index */
+}
+
+/* Адаптивность (пример) */
+@media (max-width: 600px) {
+  .container {
+    max-width: 400px;
+    gap: 15px;
+  }
+  /* Можно уменьшить размеры элементов на маленьких экранах */
+  .item-small {
+    width: 60px;
+    height: 40px;
+  }
+  .item-medium {
+    width: 100px;
+    height: 60px;
+  }
+  .item-large {
+    width: 130px;
+    height: 80px;
+  }
+  .item-wide {
+    width: 215px;
+    height: 50px;
+  }
+  .item-tall {
+    width: 80px;
+    height: 120px;
+  }
+}
+@media (max-width: 450px) {
+  .container {
+    max-width: 300px;
+    gap: 10px;
+  }
+  .item-small {
+    width: 50px;
+    height: 35px;
+    font-size: 0.8em;
+  }
+  .item-medium {
+    width: 80px;
+    height: 50px;
+    font-size: 0.9em;
+  }
+  .item-large {
+    width: 110px;
+    height: 70px;
+  }
+  .item-wide {
+    width: 170px;
+    height: 45px;
+  }
+  .item-tall {
+    width: 70px;
+    height: 105px;
+  }
+}

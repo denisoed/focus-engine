@@ -15,22 +15,6 @@ import { FocusEngine } from 'focus-engine';
 
 // Initialize with default options
 const focusEngine = new FocusEngine();
-
-// Get an element to focus
-const element = document.getElementById('my-element');
-
-// Apply focus effect
-focusEngine.focus(element);
-
-// Initialize with custom options
-const customFocusEngine = new FocusEngine({
-  duration: 500, // Duration of effect in ms (default: 1000)
-  color: 'rgba(0, 255, 0, 0.5)', // Color of focus effect (default: 'rgba(255, 0, 0, 0.3)')
-  element: document.body, // Default element to focus (optional)
-});
-
-// Using the default element from options
-customFocusEngine.focus();
 ```
 
 ## API
@@ -47,13 +31,11 @@ new FocusEngine(options?: FocusOptions)
 
 #### Options
 
-- `element?: HTMLElement | null` - Default element to focus
-- `duration?: number` - Duration of effect in milliseconds (default: 1000)
-- `color?: string` - Color of focus effect (default: 'rgba(255, 0, 0, 0.3)')
+-
 
 #### Methods
 
-- `focus(element?: HTMLElement): void` - Apply focus effect to the provided element or the default element from options
+-
 
 ## Development
 
@@ -93,6 +75,29 @@ npm run lint
 
 ```bash
 npm run format
+```
+
+### Version Management
+
+This project includes automatic version incrementation when pushing to git.
+
+#### Automatic Version Bump on Git Push
+
+When you push changes to Git, a pre-push hook will automatically increment the patch version in package.json, commit the change, and continue with the push.
+
+#### Manual Version Management
+
+You can also manually control version bumps:
+
+```bash
+# Bump patch version (0.1.0 -> 0.1.1)
+npm run bump:patch
+
+# Bump minor version (0.1.0 -> 0.2.0)
+npm run bump:minor
+
+# Bump major version (0.1.0 -> 2.0.0)
+npm run bump:major
 ```
 
 ## License

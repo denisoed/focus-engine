@@ -3,27 +3,70 @@ body {
   color: white;
   font-family: sans-serif;
   display: flex;
-  justify-content: center;
-  align-items: center;
+  flex-direction: column;
   min-height: 100vh;
   margin: 0;
-  padding: 20px; /* Добавим отступы для body */
+  padding: 20px;
   box-sizing: border-box;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.header h1 {
+  color: #61dafb;
+  margin-bottom: 10px;
+}
+
+.header p {
+  color: #ccc;
+  margin-bottom: 20px;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.control-button {
+  background-color: #61dafb;
+  color: #282c34;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition:
+    background-color 0.2s,
+    transform 0.1s;
+}
+
+.control-button:hover {
+  background-color: #4fa8d1;
+}
+
+.control-button:active {
+  transform: scale(0.95);
 }
 
 .container {
   display: flex;
-  flex-wrap: wrap; /* Позволяет элементам переноситься */
-  align-items: flex-start; /* Выравнивание по верху для элементов разной высоты */
-  gap: 20px; /* Пространство между элементами */
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 20px;
   padding: 20px;
-  max-width: 700px; /* Немного увеличим максимальную ширину */
+  max-width: 700px;
+  margin: 0 auto;
   border: 2px solid #61dafb;
   border-radius: 10px;
   background-color: #20232a;
 }
 
-/* Базовый стиль для фокусируемых элементов */
+/* Base style for focusable elements */
 .focusable {
   background-color: #61dafb;
   color: #20232a;
@@ -36,15 +79,15 @@ body {
     transform 0.1s ease,
     box-shadow 0.1s ease,
     border-color 0.1s ease;
-  outline: none; /* Убираем стандартный контур */
-  border: 3px solid transparent; /* Резервируем место для рамки фокуса */
-  box-sizing: border-box; /* Учитываем рамку в размерах */
+  outline: none;
+  border: 3px solid transparent;
+  box-sizing: border-box;
   font-weight: bold;
   text-align: center;
-  padding: 5px; /* Небольшой внутренний отступ */
+  padding: 5px;
 }
 
-/* Классы для разных размеров */
+/* Classes for different sizes */
 .item-small {
   width: 80px;
   height: 50px;
@@ -58,30 +101,79 @@ body {
   height: 90px;
 }
 .item-wide {
-  width: 260px; /* Примерно как два средних + gap */
+  width: 260px;
   height: 60px;
 }
 .item-tall {
   width: 100px;
-  height: 140px; /* Примерно как два средних по высоте + gap */
+  height: 140px;
 }
 
-/* Стиль для элемента в фокусе */
+/* Style for focused element */
 .focusable:focus {
-  border-color: #ffdd57; /* Яркая рамка для фокуса */
+  border-color: #ffdd57;
   box-shadow: 0 0 15px rgba(255, 221, 87, 0.7);
-  transform: scale(1.05); /* Немного увеличиваем */
-  z-index: 10; /* Чтобы увеличенный элемент был поверх других */
-  position: relative; /* Для работы z-index */
+  transform: scale(1.05);
+  z-index: 10;
+  position: relative;
 }
 
-/* Адаптивность (пример) */
+.footer {
+  margin-top: 30px;
+  width: 100%;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.log-panel {
+  background-color: #20232a;
+  border: 2px solid #61dafb;
+  border-radius: 8px;
+  padding: 15px;
+}
+
+.log-panel h3 {
+  color: #61dafb;
+  margin-top: 0;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.log-content {
+  height: 150px;
+  overflow-y: auto;
+  background-color: #1a1d24;
+  padding: 10px;
+  border-radius: 4px;
+  font-family: monospace;
+  color: #ddd;
+}
+
+/* Responsiveness (example) */
+@media (max-width: 750px) {
+  .container,
+  .footer {
+    max-width: 500px;
+  }
+
+  .controls {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .control-button {
+    width: 200px;
+  }
+}
+
 @media (max-width: 600px) {
-  .container {
+  .container,
+  .footer {
     max-width: 400px;
     gap: 15px;
   }
-  /* Можно уменьшить размеры элементов на маленьких экранах */
+  /* Can reduce element sizes on small screens */
   .item-small {
     width: 60px;
     height: 40px;
@@ -104,7 +196,8 @@ body {
   }
 }
 @media (max-width: 450px) {
-  .container {
+  .container,
+  .footer {
     max-width: 300px;
     gap: 10px;
   }

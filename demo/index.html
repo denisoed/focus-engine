@@ -7,23 +7,40 @@
     <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
-    <div class="container">
-      <div class="focusable item-medium" tabindex="0">Блок 1 (M)</div>
-      <div class="focusable item-small" tabindex="0">Блок 2 (S)</div>
-      <div class="focusable item-large" tabindex="0">Блок 3 (L)</div>
-      <div class="focusable item-small" tabindex="0">Блок 4 (S)</div>
-      <div class="focusable item-wide" tabindex="0">Широкий Блок 5 (W)</div>
-      <div class="focusable item-medium" tabindex="0">Блок 6 (M)</div>
-      <div class="focusable item-tall" tabindex="0">Высокий Блок 7 (T)</div>
-      <div class="focusable item-small" tabindex="0">Блок 8 (S)</div>
-      <div class="focusable item-medium" tabindex="0">Блок 9 (M)</div>
-      <div class="focusable item-small" tabindex="0">Блок 10 (S)</div>
-      <div class="focusable item-large" tabindex="0">Блок 11 (L)</div>
-      <div class="focusable item-medium" tabindex="0">Блок 12 (M)</div>
-      <div class="focusable item-small" tabindex="0">Блок 13 (S)</div>
-      <div class="focusable item-medium" tabindex="0">Блок 14 (M)</div>
-      <div class="focusable item-wide" tabindex="0">Ещё Широкий 15 (W)</div>
-      <div class="focusable item-small" tabindex="0">Блок 16 (S)</div>
+    <div class="header">
+      <h1>FocusEngine Demo</h1>
+      <p>Use arrow keys to navigate between elements. Press Enter to select.</p>
+      <div class="controls">
+        <button id="add-element" class="control-button">Add New Element</button>
+        <button id="destroy-engine" class="control-button">Destroy Engine</button>
+        <button id="reinit-engine" class="control-button">Reinitialize Engine</button>
+      </div>
+    </div>
+
+    <div class="container grid-container">
+      <div class="focusable item-medium" tabindex="0">Block 1 (M)</div>
+      <div class="focusable item-small" tabindex="0">Block 2 (S)</div>
+      <div class="focusable item-large" tabindex="0">Block 3 (L)</div>
+      <div class="focusable item-small" tabindex="0">Block 4 (S)</div>
+      <div class="focusable item-wide" tabindex="0">Wide Block 5 (W)</div>
+      <div class="focusable item-medium" tabindex="0">Block 6 (M)</div>
+      <div class="focusable item-tall" tabindex="0">Tall Block 7 (T)</div>
+      <div class="focusable item-small" tabindex="0">Block 8 (S)</div>
+      <div class="focusable item-medium" tabindex="0">Block 9 (M)</div>
+      <div class="focusable item-small" tabindex="0">Block 10 (S)</div>
+      <div class="focusable item-large" tabindex="0">Block 11 (L)</div>
+      <div class="focusable item-medium" tabindex="0">Block 12 (M)</div>
+      <div class="focusable item-small" tabindex="0">Block 13 (S)</div>
+      <div class="focusable item-medium" tabindex="0">Block 14 (M)</div>
+      <div class="focusable item-wide" tabindex="0">Another Wide 15 (W)</div>
+      <div class="focusable item-small" tabindex="0">Block 16 (S)</div>
+    </div>
+
+    <div class="footer">
+      <div id="log" class="log-panel">
+        <h3>Event Log</h3>
+        <div id="log-content" class="log-content"></div>
+      </div>
     </div>
 
     <script type="module" src="/src/demo.js"></script>

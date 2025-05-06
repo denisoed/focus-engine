@@ -18,6 +18,11 @@ export interface Point {
 export type Direction = 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight';
 
 /**
+ * Type for parent position
+ */
+export type ParentPosition = 'left' | 'right';
+
+/**
  * Options for configuring the FocusEngine
  */
 export interface FocusEngineOptions {
@@ -35,6 +40,8 @@ export interface FocusEngineOptions {
   parentAttr?: string;
   /** The data attribute name used to connect child elements to their parent */
   childAttr?: string;
+  /** Position of parents relative to their children (default: 'left') */
+  parentPosition?: ParentPosition;
 }
 
 /**
@@ -54,6 +61,7 @@ export class FocusEngine {
   private parentAttr: string;
   private childAttr: string;
   private lastParentMap: Map<string, HTMLElement> = new Map();
+  private parentPosition: ParentPosition;
 
   /**
    * Creates a new instance of FocusEngine
@@ -66,6 +74,7 @@ export class FocusEngine {
     this.focusClassName = options.focusClassName || 'focus-engine-active';
     this.parentAttr = options.parentAttr || 'data-focus-parent';
     this.childAttr = options.childAttr || 'data-focus-child-of';
+    this.parentPosition = options.parentPosition || 'left';
 
     // Create a bound handler function that preserves this context
     this.keydownHandler = this.handleKeyDown.bind(this);
@@ -397,15 +406,29 @@ export class FocusEngine {
   }
 
   /**
-   * Determines if navigation in this direction should go to the parent
+   * Decides whether to navigate from a child element back to its parent
    */
   private shouldNavigateToParent(
     currentElement: HTMLElement,
     direction: Direction,
     parentId: string
   ): boolean {
-    // Возвращаемся к родителю только при нажатии "влево"
-    if (direction !== 'ArrowLeft') {
+    // Get the navigation direction based on parent position
+    let navigationDirection: Direction;
+
+    switch (this.parentPosition) {
+      case 'left':
+        navigationDirection = 'ArrowLeft';
+        break;
+      case 'right':
+        navigationDirection = 'ArrowRight';
+        break;
+      default:
+        navigationDirection = 'ArrowLeft'; // Default behavior
+    }
+
+    // Check if the pressed direction matches the navigation direction for the parent position
+    if (direction !== navigationDirection) {
       return false;
     }
 
@@ -414,14 +437,25 @@ export class FocusEngine {
       (el) => el.getAttribute(this.childAttr) === parentId && el.offsetParent !== null
     );
 
-    // Проверяем, находится ли элемент на левом краю группы
-    const isAtLeftEdge = this.isElementAtLeftEdge(currentElement, siblingsWithSameParent);
+    // Check if element is at the edge in the direction of the parent
+    let isAtEdge = false;
 
-    if (!isAtLeftEdge) {
+    switch (this.parentPosition) {
+      case 'left':
+        isAtEdge = this.isElementAtLeftEdge(currentElement, siblingsWithSameParent);
+        break;
+      case 'right':
+        isAtEdge = this.isElementAtRightEdge(currentElement, siblingsWithSameParent);
+        break;
+      default:
+        isAtEdge = this.isElementAtLeftEdge(currentElement, siblingsWithSameParent);
+    }
+
+    if (!isAtEdge) {
       return false;
     }
 
-    // Найдем родительский элемент
+    // Find the parent element
     const parentElements = this.focusableElements.filter(
       (el) => el.getAttribute(this.parentAttr) === parentId && el.offsetParent !== null
     );
@@ -430,38 +464,20 @@ export class FocusEngine {
       return false;
     }
 
-    // Убедимся, что родительский элемент находится слева от текущего элемента
+    // Check if parent element is in the correct position relative to the current element
     const parentElement = parentElements[0];
     const parentRect = this.getRect(parentElement);
     const currentRect = this.getRect(currentElement);
 
-    // Родитель должен быть слева от дочернего элемента
-    return parentRect.right <= currentRect.left;
-  }
-
-  /**
-   * Проверяет, находится ли элемент на левом краю группы
-   */
-  private isElementAtLeftEdge(element: HTMLElement, siblingGroup: HTMLElement[]): boolean {
-    // Если элемент один в группе, он всегда на краю
-    if (siblingGroup.length <= 1) {
-      return true;
+    // Check position based on parent position
+    switch (this.parentPosition) {
+      case 'left':
+        return parentRect.right <= currentRect.left;
+      case 'right':
+        return parentRect.left >= currentRect.right;
+      default:
+        return parentRect.right <= currentRect.left;
     }
-
-    const elementRect = this.getRect(element);
-
-    // Проверяем, есть ли другие элементы слева от текущего
-    const hasLeftSibling = siblingGroup.some((sibling) => {
-      if (sibling === element) return false;
-      const siblingRect = this.getRect(sibling);
-      return (
-        siblingRect.right <= elementRect.left &&
-        siblingRect.bottom > elementRect.top &&
-        siblingRect.top < elementRect.bottom
-      );
-    });
-
-    return !hasLeftSibling;
   }
 
   /**
@@ -756,8 +772,22 @@ export class FocusEngine {
    * @returns True if we should navigate to children
    */
   private shouldNavigateToChildren(currentElement: HTMLElement, direction: Direction): boolean {
-    // Only navigate to children with ArrowRight
-    if (direction !== 'ArrowRight') {
+    // Get the navigation direction based on parent position
+    let navigationDirection: Direction;
+
+    switch (this.parentPosition) {
+      case 'left':
+        navigationDirection = 'ArrowRight';
+        break;
+      case 'right':
+        navigationDirection = 'ArrowLeft';
+        break;
+      default:
+        navigationDirection = 'ArrowRight'; // Default behavior
+    }
+
+    // Only navigate to children when the direction matches
+    if (direction !== navigationDirection) {
       return false;
     }
 
@@ -775,13 +805,70 @@ export class FocusEngine {
       return false; // No visible children
     }
 
-    // Check if the children are to the right of the parent
+    // Check if the children are positioned correctly relative to the parent
     const firstChild = childElements[0];
     const parentRect = this.getRect(currentElement);
     const childRect = this.getRect(firstChild);
 
-    // Child should be to the right of parent
-    return childRect.left >= parentRect.right - 5;
+    // Check position based on parent position
+    switch (this.parentPosition) {
+      case 'left':
+        return childRect.left >= parentRect.right - 5;
+      case 'right':
+        return childRect.right <= parentRect.left + 5;
+      default:
+        return childRect.left >= parentRect.right - 5;
+    }
+  }
+
+  /**
+   * Checks if an element is at the left edge of its sibling group
+   */
+  private isElementAtLeftEdge(element: HTMLElement, siblingGroup: HTMLElement[]): boolean {
+    // If element is alone in group, it's always at the edge
+    if (siblingGroup.length <= 1) {
+      return true;
+    }
+
+    const elementRect = this.getRect(element);
+
+    // Check if there are other elements to the left of the current one
+    const hasLeftSibling = siblingGroup.some((sibling) => {
+      if (sibling === element) return false;
+      const siblingRect = this.getRect(sibling);
+      return (
+        siblingRect.right <= elementRect.left &&
+        siblingRect.bottom > elementRect.top &&
+        siblingRect.top < elementRect.bottom
+      );
+    });
+
+    return !hasLeftSibling;
+  }
+
+  /**
+   * Checks if an element is at the right edge of its sibling group
+   */
+  private isElementAtRightEdge(element: HTMLElement, siblingGroup: HTMLElement[]): boolean {
+    // If element is alone in group, it's always at the edge
+    if (siblingGroup.length <= 1) {
+      return true;
+    }
+
+    const elementRect = this.getRect(element);
+
+    // Check if there are other elements to the right of the current one
+    const hasRightSibling = siblingGroup.some((sibling) => {
+      if (sibling === element) return false;
+      const siblingRect = this.getRect(sibling);
+      return (
+        siblingRect.left >= elementRect.right &&
+        siblingRect.bottom > elementRect.top &&
+        siblingRect.top < elementRect.bottom
+      );
+    });
+
+    return !hasRightSibling;
   }
 }
 

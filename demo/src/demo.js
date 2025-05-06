@@ -4,6 +4,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Reference to log panel content
   const logContent = document.getElementById('log-content');
 
+  // Current parent position
+  let currentParentPosition = 'left';
+
   // Function to log events
   function logEvent(message) {
     if (!logContent) return;
@@ -86,6 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
       autoInit: true,
       parentAttr: 'data-focus-parent',
       childAttr: 'data-focus-child-of',
+      parentPosition: currentParentPosition, // Use current parent position
       onSelect: (element) => {
         logEvent(`Element selected: ${element.textContent}`);
 
@@ -99,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
       },
     });
 
-    logEvent('FocusEngine initialized with parent-child navigation');
+    logEvent(`FocusEngine initialized with parent position: ${currentParentPosition}`);
 
     // Default to showing all categories
     showAllCategories();
@@ -121,8 +125,43 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 500);
   }
 
+  // Function to apply layout changes based on parent position
+  function applyParentPositionLayout(position) {
+    const demoLayout = document.querySelector('.demo-layout');
+
+    // Remove any previous position classes
+    demoLayout.classList.remove('parent-left', 'parent-right');
+
+    // Add the new position class
+    demoLayout.classList.add(`parent-${position}`);
+
+    logEvent(`Layout changed to parent-${position}`);
+  }
+
   // Initial setup
+  applyParentPositionLayout(currentParentPosition);
   initializeEngine();
+
+  // Handle parent position change
+  const parentPositionSelect = document.getElementById('parent-position');
+  if (parentPositionSelect) {
+    parentPositionSelect.addEventListener('change', () => {
+      const newPosition = parentPositionSelect.value;
+      logEvent(`Changing parent position to: ${newPosition}`);
+
+      // Update current position
+      currentParentPosition = newPosition;
+
+      // Apply layout changes
+      applyParentPositionLayout(newPosition);
+
+      // Reinitialize engine with new position
+      if (engine) {
+        engine.destroy();
+      }
+      initializeEngine();
+    });
+  }
 
   // Test function to verify parent-to-child navigation
   function testParentToChildNavigation() {
@@ -176,87 +215,100 @@ document.addEventListener('DOMContentLoaded', () => {
   function testArrowKeyNavigation(parentElement) {
     logEvent('--- Testing Arrow key navigation ---');
 
-    // First test that ArrowRight navigates to children
-    testRightArrowNavigation(parentElement);
+    // Get the appropriate navigation key based on current parent position
+    const navigationKey = getNavigationKeyByPosition(currentParentPosition);
 
-    // After a delay, test that ArrowDown does NOT navigate to children
+    // First test that the correct arrow navigates to children
+    testArrowNavigation(parentElement, navigationKey, true);
+
+    // After a delay, test that the other arrows do NOT navigate to children
     setTimeout(() => {
-      testDownArrowNavigation(parentElement);
+      // Get a direction that shouldn't navigate
+      const wrongDirection = getOppositeDirection(navigationKey);
+      testArrowNavigation(parentElement, wrongDirection, false);
     }, 1000);
   }
 
-  function testRightArrowNavigation(parentElement) {
+  function getNavigationKeyByPosition(position) {
+    // Return the appropriate arrow key for the current position
+    switch (position) {
+      case 'left':
+        return 'ArrowRight';
+      case 'right':
+        return 'ArrowLeft';
+      default:
+        return 'ArrowRight';
+    }
+  }
+
+  function getOppositeDirection(direction) {
+    // Return an arrow that's perpendicular to the given direction
+    switch (direction) {
+      case 'ArrowRight':
+      case 'ArrowLeft':
+        return 'ArrowDown';
+      case 'ArrowUp':
+      case 'ArrowDown':
+        return 'ArrowRight';
+      default:
+        return 'ArrowDown';
+    }
+  }
+
+  function testArrowNavigation(parentElement, arrowKey, shouldNavigateToChild) {
     // Focus the parent again
     parentElement.focus();
-    logEvent(`TEST RIGHT ARROW: Focused parent element: ${parentElement.textContent.trim()}`);
+    logEvent(`TEST ${arrowKey}: Focused parent element: ${parentElement.textContent.trim()}`);
 
-    // Simulate pressing Right Arrow on the parent (should move to children)
+    // Simulate pressing Arrow key on the parent
     const arrowEvent = new KeyboardEvent('keydown', {
-      key: 'ArrowRight',
+      key: arrowKey,
       bubbles: true,
       cancelable: true,
     });
     parentElement.dispatchEvent(arrowEvent);
 
-    // Check if focus moved to a child
+    // Check if focus moved as expected
     setTimeout(() => {
       const activeElement = document.activeElement;
       logEvent(
-        `TEST RIGHT ARROW: After ArrowRight, focused element is: ${activeElement.textContent.trim()}`
+        `TEST ${arrowKey}: After ${arrowKey}, focused element is: ${activeElement.textContent.trim()}`
       );
 
       const isChild = activeElement.getAttribute('data-focus-child-of') === 'small-items';
-      if (isChild) {
-        logEvent(
-          'TEST RIGHT ARROW PASSED: Successfully navigated from parent to child with right arrow key'
-        );
-      } else {
-        logEvent(
-          'TEST RIGHT ARROW FAILED: Did not navigate to a child element with right arrow key'
-        );
-      }
-    }, 100);
-  }
 
-  function testDownArrowNavigation(parentElement) {
-    // Focus the parent again
-    parentElement.focus();
-    logEvent(`TEST DOWN ARROW: Focused parent element: ${parentElement.textContent.trim()}`);
-
-    // Simulate pressing Down Arrow on the parent (should NOT move to children)
-    const arrowEvent = new KeyboardEvent('keydown', {
-      key: 'ArrowDown',
-      bubbles: true,
-      cancelable: true,
-    });
-    parentElement.dispatchEvent(arrowEvent);
-
-    // Check that focus did not move to a child
-    setTimeout(() => {
-      const activeElement = document.activeElement;
-      logEvent(
-        `TEST DOWN ARROW: After ArrowDown, focused element is: ${activeElement.textContent.trim()}`
-      );
-
-      const isParent =
-        activeElement === parentElement ||
-        (activeElement.classList.contains('category-item') &&
-          !activeElement.hasAttribute('data-focus-child-of'));
-
-      const isNextCategory = activeElement.classList.contains('category-item');
-
-      if (isParent || isNextCategory) {
-        logEvent(
-          'TEST DOWN ARROW PASSED: Correctly did not navigate to child element with down arrow key'
-        );
-      } else {
-        const isChild = activeElement.getAttribute('data-focus-child-of') === 'small-items';
+      if (shouldNavigateToChild) {
+        // Should navigate to child
         if (isChild) {
           logEvent(
-            'TEST DOWN ARROW FAILED: Incorrectly navigated to child element with down arrow key'
+            `TEST ${arrowKey} PASSED: Successfully navigated from parent to child with ${arrowKey} key`
           );
         } else {
-          logEvent('TEST DOWN ARROW INCONCLUSIVE: Focus moved to non-child, non-parent element');
+          logEvent(
+            `TEST ${arrowKey} FAILED: Did not navigate to a child element with ${arrowKey} key`
+          );
+        }
+      } else {
+        // Should NOT navigate to child
+        const isParent =
+          activeElement === parentElement ||
+          (activeElement.classList.contains('category-item') &&
+            !activeElement.hasAttribute('data-focus-child-of'));
+
+        const isNextCategory = activeElement.classList.contains('category-item');
+
+        if (isParent || isNextCategory) {
+          logEvent(
+            `TEST ${arrowKey} PASSED: Correctly did not navigate to child element with ${arrowKey} key`
+          );
+        } else {
+          if (isChild) {
+            logEvent(
+              `TEST ${arrowKey} FAILED: Incorrectly navigated to child element with ${arrowKey} key`
+            );
+          } else {
+            logEvent(`TEST ${arrowKey} INCONCLUSIVE: Focus moved to non-child, non-parent element`);
+          }
         }
       }
     }, 100);

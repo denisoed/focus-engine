@@ -9,6 +9,11 @@ declare module 'focus-engine' {
   export type Direction = 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight';
 
   /**
+   * Type for parent position
+   */
+  export type ParentPosition = 'left' | 'right';
+
+  /**
    * Options for configuring the FocusEngine
    */
   export interface FocusEngineOptions {
@@ -20,6 +25,14 @@ declare module 'focus-engine' {
     autoInit?: boolean;
     /** Callback function when an element is selected (Enter key is pressed) */
     onSelect?: (element: HTMLElement) => void;
+    /** CSS class name to apply to the focused element */
+    focusClassName?: string;
+    /** The data attribute name used to indicate a parent element */
+    parentAttr?: string;
+    /** The data attribute name used to connect child elements to their parent */
+    childAttr?: string;
+    /** Position of parents relative to their children (default: 'left') */
+    parentPosition?: ParentPosition;
   }
 
   /**

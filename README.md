@@ -54,6 +54,18 @@ interface FocusEngineOptions {
 
   /** Callback function when an element is selected (Enter key is pressed) */
   onSelect?: (element: HTMLElement) => void;
+
+  /** CSS class name to apply to the focused element. Default: 'focus-engine-active' */
+  focusClassName?: string;
+
+  /** The data attribute name used to indicate a parent element. Default: 'data-focus-parent' */
+  parentAttr?: string;
+
+  /** The data attribute name used to connect child elements to their parent. Default: 'data-focus-child-of' */
+  childAttr?: string;
+
+  /** Position of parents relative to their children. Default: 'left' */
+  parentPosition?: 'left' | 'right';
 }
 ```
 
@@ -77,6 +89,22 @@ The navigation algorithm intelligently determines the most appropriate element t
 - Spatial relationship between elements
 - Visual overlap between elements
 - Distance between elements
+
+#### Parent Positions
+
+FocusEngine supports different parent positions relative to their child elements. This is useful when creating UI layouts with parent elements located in different positions:
+
+- **'left'** (default) - Parents are located to the left of their child elements. Navigation between parents and children is done using Left/Right arrow keys.
+- **'right'** - Parents are located to the right of their child elements. Navigation between parents and children is done using Right/Left arrow keys.
+
+Example usage:
+
+```typescript
+// Initialize with parents positioned on the right side
+const focusEngine = new FocusEngine({
+  parentPosition: 'right',
+});
+```
 
 ## Demo Application
 

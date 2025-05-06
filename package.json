@@ -1,6 +1,6 @@
 {
   "name": "focus-engine",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "A TypeScript npm plugin",
   "type": "module",
   "main": "dist/index.js",

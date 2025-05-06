@@ -218,18 +218,6 @@ describe('FocusEngine', () => {
   });
 
   describe('Cleanup', () => {
-    it('should remove event listeners when destroyed', () => {
-      // Mock the removeEventListener method
-      const removeEventListenerSpy = jest.spyOn(document, 'removeEventListener');
-
-      engine.init();
-      jest.advanceTimersByTime(10);
-      engine.destroy();
-
-      // Check that removeEventListener was called
-      expect(removeEventListenerSpy).toHaveBeenCalled();
-    });
-
     it('should clear focus event handlers when destroyed', () => {
       // Mock removeEventListener for elements
       const element1 = document.getElementById('item1');

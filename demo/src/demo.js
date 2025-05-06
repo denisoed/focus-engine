@@ -208,19 +208,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const remoteOk = document.getElementById('remote-ok');
     const remoteBack = document.getElementById('remote-back');
 
-    // Helper function to simulate keyboard events (legacy approach)
-    function simulateKeyEvent(key) {
-      const event = new KeyboardEvent('keydown', {
-        key: key,
-        code: key === 'Enter' ? 'Enter' : `Arrow${key.replace('Arrow', '')}`,
-        bubbles: true,
-        cancelable: true,
-      });
-
-      document.dispatchEvent(event);
-      logEvent(`Remote button pressed: ${key}`);
-    }
-
     // Add event listeners to buttons
     if (remoteUp) {
       remoteUp.addEventListener('click', () => {
@@ -331,8 +318,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Keyboard event logging for debugging
   document.addEventListener('keydown', (event) => {
-    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(event.key)) {
+    if (
+      ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Escape'].includes(event.key)
+    ) {
       logEvent(`Key pressed: ${event.key}`);
+
+      if (event.key === 'Enter') {
+        engine.triggerEnter();
+      } else if (event.key === 'ArrowUp') {
+        engine.triggerArrowUp();
+      } else if (event.key === 'ArrowDown') {
+        engine.triggerArrowDown();
+      } else if (event.key === 'ArrowLeft') {
+        engine.triggerArrowLeft();
+      } else if (event.key === 'ArrowRight') {
+        engine.triggerArrowRight();
+      } else if (event.key === 'Escape') {
+        engine.triggerBack();
+      }
     }
   });
 });

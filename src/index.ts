@@ -54,7 +54,6 @@ export class FocusEngine {
   private tabIndexAttr: string | number;
   private onSelectCallback?: (element: HTMLElement) => void;
   private initialized: boolean = false;
-  private keydownHandler: (event: KeyboardEvent) => void;
   private focusEventHandlers: Map<HTMLElement, EventListenerOrEventListenerObject> = new Map();
   private focusClassName: string;
   private previouslyFocusedElement: HTMLElement | null = null;
@@ -80,9 +79,6 @@ export class FocusEngine {
     this.parentAttr = options.parentAttr || 'data-focus-parent';
     this.childAttr = options.childAttr || 'data-focus-child-of';
     this.parentPosition = options.parentPosition || 'left';
-
-    // Create a bound handler function that preserves this context
-    this.keydownHandler = this.handleKeyDown.bind(this);
 
     if (options.autoInit !== false) {
       // Delayed initialization for proper DOM handling
@@ -111,7 +107,6 @@ export class FocusEngine {
     }
 
     this.updateFocusableElements();
-    this.setupEventListeners();
 
     // Call with a small delay for proper DOM rendering
     setTimeout(() => {
@@ -143,9 +138,10 @@ export class FocusEngine {
    * Finds and stores all focusable elements matching the selector
    */
   public updateFocusableElements(): void {
-    // Очищаем старые обработчики фокуса перед обновлением элементов
+    // Remove all existing focus event listeners
     this.clearFocusEventListeners();
 
+    // Get all focusable elements matching the selector
     this.focusableElements = Array.from(document.querySelectorAll(this.selector)) as HTMLElement[];
 
     // Update focus event listeners
@@ -252,68 +248,6 @@ export class FocusEngine {
         } catch (error) {
           console.error('Error setting fallback focus:', error);
         }
-      }
-    }
-  }
-
-  /**
-   * Sets up keyboard event listeners
-   */
-  private setupEventListeners(): void {
-    // Remove the old handler if it exists
-    document.removeEventListener('keydown', this.keydownHandler);
-
-    // Add a new handler
-    document.addEventListener('keydown', this.keydownHandler);
-  }
-
-  /**
-   * Handles keydown events for navigation
-   */
-  private handleKeyDown(event: KeyboardEvent): void {
-    const currentFocusedElement = this.activeElement || (document.activeElement as HTMLElement);
-    const direction = event.key as Direction;
-
-    // Only for navigation keys
-    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(direction)) {
-      // If there is no focus or focus is not on one of our elements
-      if (!currentFocusedElement || !this.focusableElements.includes(currentFocusedElement)) {
-        if (
-          this.currentFocusIndex !== -1 &&
-          this.focusableElements[this.currentFocusIndex] &&
-          this.focusableElements[this.currentFocusIndex].offsetParent !== null
-        ) {
-          try {
-            const element = this.focusableElements[this.currentFocusIndex];
-            element.focus({ preventScroll: false });
-            this.updateFocusClass(element);
-          } catch (error) {
-            console.error('Error restoring focus:', error);
-            this.setInitialFocus();
-          }
-        } else {
-          this.setInitialFocus();
-        }
-      } else {
-        // Ensure the class is applied to the currently focused element
-        this.updateFocusClass(currentFocusedElement);
-      }
-
-      // Arrow handling - use the public trigger methods
-      if (direction === 'ArrowUp') {
-        event.preventDefault(); // Prevent page scrolling
-        this.triggerArrowUp();
-      } else if (direction === 'ArrowDown') {
-        event.preventDefault(); // Prevent page scrolling
-        this.triggerArrowDown();
-      } else if (direction === 'ArrowLeft') {
-        event.preventDefault(); // Prevent page scrolling
-        this.triggerArrowLeft();
-      } else if (direction === 'ArrowRight') {
-        event.preventDefault(); // Prevent page scrolling
-        this.triggerArrowRight();
-      } else if (direction === 'Enter') {
-        this.triggerEnter();
       }
     }
   }
@@ -454,7 +388,7 @@ export class FocusEngine {
    */
   private handleEnterKey(currentElement: HTMLElement): void {
     if (currentElement && this.focusableElements.includes(currentElement)) {
-      // Применяем визуальный эффект
+      // Apply visual effect
       currentElement.style.transform = 'scale(0.95)';
       setTimeout(() => {
         if (this.activeElement === currentElement || document.activeElement === currentElement) {
@@ -853,7 +787,6 @@ export class FocusEngine {
    * Destroys the FocusEngine instance by removing event listeners
    */
   public destroy(): void {
-    document.removeEventListener('keydown', this.keydownHandler);
     this.clearFocusEventListeners();
 
     // Remove focus class from the last focused element

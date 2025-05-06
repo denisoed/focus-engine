@@ -17,23 +17,102 @@
       </div>
     </div>
 
-    <div class="container grid-container">
-      <div class="focusable item-medium" tabindex="0">Block 1 (M)</div>
-      <div class="focusable item-small" tabindex="0">Block 2 (S)</div>
-      <div class="focusable item-large" tabindex="0">Block 3 (L)</div>
-      <div class="focusable item-small" tabindex="0">Block 4 (S)</div>
-      <div class="focusable item-wide" tabindex="0">Wide Block 5 (W)</div>
-      <div class="focusable item-medium" tabindex="0">Block 6 (M)</div>
-      <div class="focusable item-tall" tabindex="0">Tall Block 7 (T)</div>
-      <div class="focusable item-small" tabindex="0">Block 8 (S)</div>
-      <div class="focusable item-medium" tabindex="0">Block 9 (M)</div>
-      <div class="focusable item-small" tabindex="0">Block 10 (S)</div>
-      <div class="focusable item-large" tabindex="0">Block 11 (L)</div>
-      <div class="focusable item-medium" tabindex="0">Block 12 (M)</div>
-      <div class="focusable item-small" tabindex="0">Block 13 (S)</div>
-      <div class="focusable item-medium" tabindex="0">Block 14 (M)</div>
-      <div class="focusable item-wide" tabindex="0">Another Wide 15 (W)</div>
-      <div class="focusable item-small" tabindex="0">Block 16 (S)</div>
+    <div class="demo-layout">
+      <!-- Categories navigation (vertical list) -->
+      <div class="categories">
+        <h2>Categories</h2>
+        <div class="category-list">
+          <div class="focusable category-item" tabindex="0" data-focus-parent="small-items">
+            Small Items
+          </div>
+          <div class="focusable category-item" tabindex="0" data-focus-parent="medium-items">
+            Medium Items
+          </div>
+          <div class="focusable category-item" tabindex="0" data-focus-parent="large-items">
+            Large Items
+          </div>
+          <div class="focusable category-item" tabindex="0" data-focus-parent="wide-items">
+            Wide Items
+          </div>
+          <div class="focusable category-item" tabindex="0" data-focus-parent="tall-items">
+            Tall Items
+          </div>
+          <div class="focusable category-item" tabindex="0" data-focus-parent="all-items">
+            All Items
+          </div>
+        </div>
+      </div>
+
+      <!-- Grid with blocks organized by categories -->
+      <div class="container grid-container">
+        <!-- Small blocks -->
+        <div class="category-group" data-category="small">
+          <div class="focusable item-small" tabindex="0" data-focus-child-of="small-items">
+            Block 2 (S)
+          </div>
+          <div class="focusable item-small" tabindex="0" data-focus-child-of="small-items">
+            Block 4 (S)
+          </div>
+          <div class="focusable item-small" tabindex="0" data-focus-child-of="small-items">
+            Block 8 (S)
+          </div>
+          <div class="focusable item-small" tabindex="0" data-focus-child-of="small-items">
+            Block 10 (S)
+          </div>
+          <div class="focusable item-small" tabindex="0" data-focus-child-of="small-items">
+            Block 13 (S)
+          </div>
+          <div class="focusable item-small" tabindex="0" data-focus-child-of="small-items">
+            Block 16 (S)
+          </div>
+        </div>
+
+        <!-- Medium blocks -->
+        <div class="category-group" data-category="medium">
+          <div class="focusable item-medium" tabindex="0" data-focus-child-of="medium-items">
+            Block 1 (M)
+          </div>
+          <div class="focusable item-medium" tabindex="0" data-focus-child-of="medium-items">
+            Block 6 (M)
+          </div>
+          <div class="focusable item-medium" tabindex="0" data-focus-child-of="medium-items">
+            Block 9 (M)
+          </div>
+          <div class="focusable item-medium" tabindex="0" data-focus-child-of="medium-items">
+            Block 12 (M)
+          </div>
+          <div class="focusable item-medium" tabindex="0" data-focus-child-of="medium-items">
+            Block 14 (M)
+          </div>
+        </div>
+
+        <!-- Large blocks -->
+        <div class="category-group" data-category="large">
+          <div class="focusable item-large" tabindex="0" data-focus-child-of="large-items">
+            Block 3 (L)
+          </div>
+          <div class="focusable item-large" tabindex="0" data-focus-child-of="large-items">
+            Block 11 (L)
+          </div>
+        </div>
+
+        <!-- Wide blocks -->
+        <div class="category-group" data-category="wide">
+          <div class="focusable item-wide" tabindex="0" data-focus-child-of="wide-items">
+            Wide Block 5 (W)
+          </div>
+          <div class="focusable item-wide" tabindex="0" data-focus-child-of="wide-items">
+            Another Wide 15 (W)
+          </div>
+        </div>
+
+        <!-- Tall blocks -->
+        <div class="category-group" data-category="tall">
+          <div class="focusable item-tall" tabindex="0" data-focus-child-of="tall-items">
+            Tall Block 7 (T)
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="footer">

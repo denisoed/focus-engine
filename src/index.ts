@@ -31,6 +31,10 @@ export interface FocusEngineOptions {
   onSelect?: (element: HTMLElement) => void;
   /** CSS class name to apply to the focused element */
   focusClassName?: string;
+  /** The data attribute name used to indicate a parent element */
+  parentAttr?: string;
+  /** The data attribute name used to connect child elements to their parent */
+  childAttr?: string;
 }
 
 /**
@@ -47,6 +51,9 @@ export class FocusEngine {
   private focusEventHandlers: Map<HTMLElement, EventListenerOrEventListenerObject> = new Map();
   private focusClassName: string;
   private previouslyFocusedElement: HTMLElement | null = null;
+  private parentAttr: string;
+  private childAttr: string;
+  private lastParentMap: Map<string, HTMLElement> = new Map();
 
   /**
    * Creates a new instance of FocusEngine
@@ -57,6 +64,8 @@ export class FocusEngine {
     this.tabIndexAttr = options.tabIndexAttr ?? 0;
     this.onSelectCallback = options.onSelect;
     this.focusClassName = options.focusClassName || 'focus-engine-active';
+    this.parentAttr = options.parentAttr || 'data-focus-parent';
+    this.childAttr = options.childAttr || 'data-focus-child-of';
 
     // Create a bound handler function that preserves this context
     this.keydownHandler = this.handleKeyDown.bind(this);
@@ -122,6 +131,13 @@ export class FocusEngine {
       const handler = () => {
         this.currentFocusIndex = index;
         this.updateFocusClass(el);
+
+        // Store parent relationship information
+        const childOfValue = el.getAttribute(this.childAttr);
+        if (childOfValue) {
+          // Remember which parent this child came from
+          this.lastParentMap.set(childOfValue, el);
+        }
       };
 
       el.addEventListener('focus', handler);
@@ -130,6 +146,35 @@ export class FocusEngine {
       // If element is already focused, apply the class
       if (document.activeElement === el) {
         this.updateFocusClass(el);
+      }
+    });
+
+    // Build parent-child relationships on initialization/update
+    this.updateParentChildRelationships();
+  }
+
+  /**
+   * Updates parent-child relationship tracking
+   */
+  private updateParentChildRelationships(): void {
+    // Find all parent elements
+    const parentElements = this.focusableElements.filter((el) => el.hasAttribute(this.parentAttr));
+
+    // For each parent, find its children and set up the relationship
+    parentElements.forEach((parentEl) => {
+      const parentId = parentEl.getAttribute(this.parentAttr);
+      if (!parentId) return;
+
+      // Find children for this parent
+      const childElements = this.focusableElements.filter(
+        (el) => el.getAttribute(this.childAttr) === parentId
+      );
+
+      if (childElements.length > 0) {
+        // If we don't have a last visited child for this parent yet, set the first child
+        if (!this.lastParentMap.has(parentId)) {
+          this.lastParentMap.set(parentId, childElements[0]);
+        }
       }
     });
   }
@@ -169,6 +214,8 @@ export class FocusEngine {
           firstVisibleElement.focus({ preventScroll: false });
           this.currentFocusIndex = this.focusableElements.indexOf(firstVisibleElement);
           this.updateFocusClass(firstVisibleElement);
+
+          // Removed auto-focus from parent to child during initialization
         } catch (error) {
           console.error('Error setting initial focus:', error);
         }
@@ -240,15 +287,40 @@ export class FocusEngine {
 
         if (!startElement) return; // No visible elements for navigation
 
-        const nextElement = this.findNextFocusable(startElement, direction);
+        // Check if this is a parent element and the key is a navigation direction that should go to children
+        const shouldNavigateToChildren = this.shouldNavigateToChildren(startElement, direction);
 
-        if (nextElement) {
+        if (shouldNavigateToChildren) {
+          // Navigate from parent to child using arrow keys
+          const navigatedToChild = this.navigateToChildren(startElement);
+          if (navigatedToChild) {
+            return; // Successfully navigated to child, exit early
+          }
+        }
+
+        // Check for parent-child relationship navigation (child to parent)
+        const parentElement = this.checkParentNavigation(startElement, direction);
+
+        if (parentElement) {
           try {
-            nextElement.focus({ preventScroll: false });
-            this.currentFocusIndex = this.focusableElements.indexOf(nextElement);
-            this.updateFocusClass(nextElement);
+            parentElement.focus({ preventScroll: false });
+            this.currentFocusIndex = this.focusableElements.indexOf(parentElement);
+            this.updateFocusClass(parentElement);
           } catch (error) {
-            console.error('Error focusing next element:', error);
+            console.error('Error focusing parent element:', error);
+          }
+        } else {
+          // No parent navigation, try spatial navigation
+          const nextElement = this.findNextFocusable(startElement, direction);
+
+          if (nextElement) {
+            try {
+              nextElement.focus({ preventScroll: false });
+              this.currentFocusIndex = this.focusableElements.indexOf(nextElement);
+              this.updateFocusClass(nextElement);
+            } catch (error) {
+              console.error('Error focusing next element:', error);
+            }
           }
         }
       }
@@ -266,13 +338,237 @@ export class FocusEngine {
             }
           }, 100);
 
-          // Call the callback function if it was provided
-          if (this.onSelectCallback) {
+          // Check if this is a parent element that has children to focus
+          const navigatedToChild = this.navigateToChildren(currentFocusedElement);
+
+          // Only call the callback if we didn't navigate to a child
+          // This prevents the callback from being called when we're just navigating
+          if (!navigatedToChild && this.onSelectCallback) {
             this.onSelectCallback(currentFocusedElement);
           }
         }
       }
     }
+  }
+
+  /**
+   * Checks if we should navigate to a parent element based on the current element and direction
+   * @param currentElement Current focused element
+   * @param direction Navigation direction
+   * @returns Parent element to focus, or null if no parent navigation should occur
+   */
+  private checkParentNavigation(
+    currentElement: HTMLElement,
+    direction: Direction
+  ): HTMLElement | null {
+    // Check if the current element has a parent relationship
+    const childOfValue = currentElement.getAttribute(this.childAttr);
+
+    if (!childOfValue) {
+      return null; // Not a child element
+    }
+
+    // Find parent elements that match the child's parent ID
+    const parentElements = this.focusableElements.filter(
+      (el) => el.getAttribute(this.parentAttr) === childOfValue
+    );
+
+    if (parentElements.length === 0) {
+      return null; // No matching parent found
+    }
+
+    // For TV-style navigation, we may want to check direction
+    // For example, only navigate to parent when pressing Left if categories are on the left
+    // or only when pressing Up if categories are above
+
+    // Determine if this direction should trigger parent navigation
+    const shouldNavigateToParent = this.shouldNavigateToParent(
+      currentElement,
+      direction,
+      childOfValue
+    );
+
+    if (shouldNavigateToParent) {
+      // Find the closest or designated parent
+      return parentElements[0]; // For now, just take the first parent
+    }
+
+    return null;
+  }
+
+  /**
+   * Determines if navigation in this direction should go to the parent
+   */
+  private shouldNavigateToParent(
+    currentElement: HTMLElement,
+    direction: Direction,
+    parentId: string
+  ): boolean {
+    // Возвращаемся к родителю только при нажатии "влево"
+    if (direction !== 'ArrowLeft') {
+      return false;
+    }
+
+    // Get all elements with the same parent
+    const siblingsWithSameParent = this.focusableElements.filter(
+      (el) => el.getAttribute(this.childAttr) === parentId && el.offsetParent !== null
+    );
+
+    // Проверяем, находится ли элемент на левом краю группы
+    const isAtLeftEdge = this.isElementAtLeftEdge(currentElement, siblingsWithSameParent);
+
+    if (!isAtLeftEdge) {
+      return false;
+    }
+
+    // Найдем родительский элемент
+    const parentElements = this.focusableElements.filter(
+      (el) => el.getAttribute(this.parentAttr) === parentId && el.offsetParent !== null
+    );
+
+    if (parentElements.length === 0) {
+      return false;
+    }
+
+    // Убедимся, что родительский элемент находится слева от текущего элемента
+    const parentElement = parentElements[0];
+    const parentRect = this.getRect(parentElement);
+    const currentRect = this.getRect(currentElement);
+
+    // Родитель должен быть слева от дочернего элемента
+    return parentRect.right <= currentRect.left;
+  }
+
+  /**
+   * Проверяет, находится ли элемент на левом краю группы
+   */
+  private isElementAtLeftEdge(element: HTMLElement, siblingGroup: HTMLElement[]): boolean {
+    // Если элемент один в группе, он всегда на краю
+    if (siblingGroup.length <= 1) {
+      return true;
+    }
+
+    const elementRect = this.getRect(element);
+
+    // Проверяем, есть ли другие элементы слева от текущего
+    const hasLeftSibling = siblingGroup.some((sibling) => {
+      if (sibling === element) return false;
+      const siblingRect = this.getRect(sibling);
+      return (
+        siblingRect.right <= elementRect.left &&
+        siblingRect.bottom > elementRect.top &&
+        siblingRect.top < elementRect.bottom
+      );
+    });
+
+    return !hasLeftSibling;
+  }
+
+  /**
+   * Navigates from a parent element to its children
+   * @param parentElement The parent element
+   * @returns True if navigation to a child occurred
+   */
+  private navigateToChildren(parentElement: HTMLElement): boolean {
+    const parentId = parentElement.getAttribute(this.parentAttr);
+    if (!parentId) {
+      return false; // Not a parent element
+    }
+
+    // Debug log to verify we're entering this method with a parent element
+    console.log(`Navigating from parent with ID: ${parentId}`);
+
+    // Find child elements with this parent ID
+    // Filter for visible elements - check both offsetParent and computed style
+    const childElements = this.focusableElements.filter((el) => {
+      if (el.getAttribute(this.childAttr) !== parentId) {
+        return false;
+      }
+
+      // Check if element is visible
+      if (el.offsetParent === null) {
+        return false;
+      }
+
+      // Also check computed style visibility for more reliability
+      const style = window.getComputedStyle(el);
+      if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+        return false;
+      }
+
+      return true;
+    });
+
+    // Debug log to show how many children we found
+    console.log(`Found ${childElements.length} visible child elements`);
+
+    if (childElements.length === 0) {
+      // If we couldn't find any visible children, try without the extra style checks
+      // as a fallback, in case the elements are just being displayed differently
+      const fallbackChildren = this.focusableElements.filter(
+        (el) => el.getAttribute(this.childAttr) === parentId && el.offsetParent !== null
+      );
+
+      console.log(`Found ${fallbackChildren.length} fallback child elements`);
+
+      if (fallbackChildren.length === 0) {
+        console.log('No children found for this parent');
+        return false; // No visible children at all
+      }
+
+      // Use the fallback children
+      return this.focusChild(fallbackChildren, parentId);
+    }
+
+    // We have visible children, focus one of them
+    return this.focusChild(childElements, parentId);
+  }
+
+  /**
+   * Helper method to focus the appropriate child based on previous history
+   * @param childElements Array of potential child elements to focus
+   * @param parentId The parent ID for retrieving last visited child
+   * @returns True if a child was successfully focused
+   */
+  private focusChild(childElements: HTMLElement[], parentId: string): boolean {
+    // First check if we have a "last visited" child for this parent
+    const lastVisitedChild = this.lastParentMap.get(parentId);
+
+    let targetChild: HTMLElement | undefined;
+
+    if (lastVisitedChild && childElements.includes(lastVisitedChild)) {
+      // We have a previously visited child, focus that one
+      console.log('Using previously visited child');
+      targetChild = lastVisitedChild;
+    } else {
+      // No previously visited child, go to the first child
+      console.log('Using first child element');
+      targetChild = childElements[0];
+    }
+
+    if (targetChild) {
+      try {
+        // Ensure the child is visible before trying to focus it
+        if (targetChild.offsetParent === null) {
+          console.error('Target child is not visible, cannot focus');
+          return false;
+        }
+
+        console.log(`Focusing child element: ${targetChild.textContent?.trim() || 'unnamed'}`);
+        targetChild.focus({ preventScroll: false });
+        this.currentFocusIndex = this.focusableElements.indexOf(targetChild);
+        this.updateFocusClass(targetChild);
+
+        // Store this child as the last visited for this parent
+        this.lastParentMap.set(parentId, targetChild);
+
+        return true;
+      } catch (error) {
+        console.error('Error focusing child element:', error);
+      }
+    }
+
+    return false;
   }
 
   /**
@@ -448,6 +744,44 @@ export class FocusEngine {
     }
 
     this.initialized = false;
+
+    // Clear parent tracking
+    this.lastParentMap.clear();
+  }
+
+  /**
+   * Determines if arrow key navigation should move from parent to child elements
+   * @param currentElement Current focused element
+   * @param direction Navigation direction
+   * @returns True if we should navigate to children
+   */
+  private shouldNavigateToChildren(currentElement: HTMLElement, direction: Direction): boolean {
+    // Only navigate to children with ArrowRight
+    if (direction !== 'ArrowRight') {
+      return false;
+    }
+
+    const parentId = currentElement.getAttribute(this.parentAttr);
+    if (!parentId) {
+      return false; // Not a parent element
+    }
+
+    // Find child elements with this parent ID
+    const childElements = this.focusableElements.filter(
+      (el) => el.getAttribute(this.childAttr) === parentId && el.offsetParent !== null
+    );
+
+    if (childElements.length === 0) {
+      return false; // No visible children
+    }
+
+    // Check if the children are to the right of the parent
+    const firstChild = childElements[0];
+    const parentRect = this.getRect(currentElement);
+    const childRect = this.getRect(firstChild);
+
+    // Child should be to the right of parent
+    return childRect.left >= parentRect.right - 5;
   }
 }
 

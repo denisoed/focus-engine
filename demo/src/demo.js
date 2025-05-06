@@ -35,12 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Function to show a specific category group
   function showCategory(categoryName) {
-    // Handle "all-items" category specially
-    if (categoryName === 'all-items') {
-      showAllCategories();
-      return;
-    }
-
     // Map from parent-id to category name
     const parentToCategoryMap = {
       'small-items': 'small',
@@ -300,12 +294,16 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector('.grid-container').appendChild(container);
       }
 
-      // Create new element
+      // Count existing items in this category to determine the new item number
+      const existingItems = container.querySelectorAll(`.item-${randomSize}`);
+      const newItemNumber = existingItems.length + 1;
+
+      // Create new element with consistent naming
       const newElement = document.createElement('div');
       newElement.className = `focusable item-${randomSize}`;
       newElement.setAttribute('tabindex', '0');
       newElement.setAttribute('data-focus-child-of', parentId);
-      newElement.textContent = `New ${randomSize.charAt(0).toUpperCase() + randomSize.slice(1)}`;
+      newElement.textContent = `${randomSize.charAt(0).toUpperCase() + randomSize.slice(1)} Item ${newItemNumber}`;
       container.appendChild(newElement);
 
       // Update the engine to recognize the new element

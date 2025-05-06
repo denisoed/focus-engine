@@ -228,6 +228,99 @@ body {
   color: #ddd;
 }
 
+/* TV Remote Control Styles */
+.remote-control-wrapper {
+  display: flex;
+  justify-content: center;
+  margin: 30px 0;
+}
+
+.remote-control {
+  background-color: #333844;
+  border-radius: 15px;
+  padding: 20px;
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+  border: 2px solid #4a4f5c;
+}
+
+.remote-header {
+  font-weight: bold;
+  color: #61dafb;
+  margin-bottom: 5px;
+}
+
+.remote-nav-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.remote-nav-row {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  justify-content: center;
+}
+
+.remote-btn {
+  border: none;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  outline: none;
+}
+
+.remote-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 0 8px rgba(97, 218, 251, 0.7);
+}
+
+.remote-nav-btn {
+  background-color: #4a4f5c;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remote-ok-btn {
+  background-color: #61dafb;
+  color: #20232a;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  font-size: 16px;
+}
+
+.remote-action-btn {
+  background-color: #e74c3c;
+  padding: 8px 20px;
+  border-radius: 5px;
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+.remote-nav-btn:hover,
+.remote-ok-btn:hover {
+  background-color: #5ab9d6;
+  box-shadow: 0 0 10px rgba(97, 218, 251, 0.5);
+}
+
+.remote-action-btn:hover {
+  background-color: #c0392b;
+}
+
 /* Responsiveness (example) */
 @media (max-width: 900px) {
   .demo-layout.parent-left,
@@ -252,6 +345,11 @@ body {
     gap: 15px;
     padding: 15px;
   }
+
+  .remote-control {
+    width: 180px;
+    padding: 15px;
+  }
 }
 
 @media (max-width: 750px) {
@@ -269,6 +367,22 @@ body {
   .control-select {
     font-size: 14px;
     padding: 6px 12px;
+  }
+
+  .remote-control {
+    width: 160px;
+    padding: 12px;
+  }
+
+  .remote-nav-btn {
+    width: 35px;
+    height: 35px;
+    font-size: 16px;
+  }
+
+  .remote-ok-btn {
+    width: 45px;
+    height: 45px;
   }
 }
 
@@ -323,6 +437,29 @@ body {
     width: 90px;
     height: 120px;
   }
+
+  .remote-control-wrapper {
+    margin: 20px 0;
+  }
+
+  .remote-control {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: auto;
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .remote-header {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 0;
+  }
+
+  .remote-action-btn {
+    margin-top: 0;
+  }
 }
 
 @media (max-width: 450px) {
@@ -361,5 +498,22 @@ body {
   .item-tall {
     width: 80px;
     height: 100px;
+  }
+
+  .remote-nav-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+  }
+
+  .remote-ok-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+  }
+
+  .remote-action-btn {
+    padding: 6px 15px;
+    font-size: 12px;
   }
 }

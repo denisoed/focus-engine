@@ -64,6 +64,11 @@ export class FocusEngine {
   private parentPosition: ParentPosition;
 
   /**
+   * Current active element that has focus
+   */
+  public activeElement: HTMLElement | null = null;
+
+  /**
    * Creates a new instance of FocusEngine
    * @param options Configuration options
    */
@@ -117,11 +122,19 @@ export class FocusEngine {
 
     // Принудительно переустановим фокус, если он не был установлен
     setTimeout(() => {
-      if (!document.activeElement || document.activeElement === document.body) {
+      if (
+        !this.activeElement &&
+        (!document.activeElement || document.activeElement === document.body)
+      ) {
         this.setInitialFocus();
-      } else if (this.focusableElements.includes(document.activeElement as HTMLElement)) {
+      } else if (
+        this.activeElement ||
+        (document.activeElement &&
+          this.focusableElements.includes(document.activeElement as HTMLElement))
+      ) {
         // If focus is already on one of our elements, apply the class
-        this.updateFocusClass(document.activeElement as HTMLElement);
+        const elementToFocus = this.activeElement || (document.activeElement as HTMLElement);
+        this.updateFocusClass(elementToFocus);
       }
     }, 300);
   }
@@ -200,6 +213,9 @@ export class FocusEngine {
     // Add class to newly focused element
     element.classList.add(this.focusClassName);
     this.previouslyFocusedElement = element;
+
+    // Update the activeElement property
+    this.activeElement = element;
   }
 
   /**
@@ -255,7 +271,7 @@ export class FocusEngine {
    * Handles keydown events for navigation
    */
   private handleKeyDown(event: KeyboardEvent): void {
-    const currentFocusedElement = document.activeElement as HTMLElement;
+    const currentFocusedElement = this.activeElement || (document.activeElement as HTMLElement);
     const direction = event.key as Direction;
 
     // Only for navigation keys
@@ -283,81 +299,284 @@ export class FocusEngine {
         this.updateFocusClass(currentFocusedElement);
       }
 
-      // Arrow handling
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(direction)) {
+      // Arrow handling - use the public trigger methods
+      if (direction === 'ArrowUp') {
         event.preventDefault(); // Prevent page scrolling
-
-        // Define the starting element for navigation
-        const startElement =
-          document.activeElement &&
-          this.focusableElements.includes(document.activeElement as HTMLElement)
-            ? (document.activeElement as HTMLElement)
-            : this.focusableElements.find((el) => el.offsetParent !== null);
-
-        if (!startElement) return; // No visible elements for navigation
-
-        // Check if this is a parent element and the key is a navigation direction that should go to children
-        const shouldNavigateToChildren = this.shouldNavigateToChildren(startElement, direction);
-
-        if (shouldNavigateToChildren) {
-          // Navigate from parent to child using arrow keys
-          const navigatedToChild = this.navigateToChildren(startElement);
-          if (navigatedToChild) {
-            return; // Successfully navigated to child, exit early
-          }
-        }
-
-        // Check for parent-child relationship navigation (child to parent)
-        const parentElement = this.checkParentNavigation(startElement, direction);
-
-        if (parentElement) {
-          try {
-            parentElement.focus({ preventScroll: false });
-            this.currentFocusIndex = this.focusableElements.indexOf(parentElement);
-            this.updateFocusClass(parentElement);
-          } catch (error) {
-            console.error('Error focusing parent element:', error);
-          }
-        } else {
-          // No parent navigation, try spatial navigation
-          const nextElement = this.findNextFocusable(startElement, direction);
-
-          if (nextElement) {
-            try {
-              nextElement.focus({ preventScroll: false });
-              this.currentFocusIndex = this.focusableElements.indexOf(nextElement);
-              this.updateFocusClass(nextElement);
-            } catch (error) {
-              console.error('Error focusing next element:', error);
-            }
-          }
-        }
+        this.triggerArrowUp();
+      } else if (direction === 'ArrowDown') {
+        event.preventDefault(); // Prevent page scrolling
+        this.triggerArrowDown();
+      } else if (direction === 'ArrowLeft') {
+        event.preventDefault(); // Prevent page scrolling
+        this.triggerArrowLeft();
+      } else if (direction === 'ArrowRight') {
+        event.preventDefault(); // Prevent page scrolling
+        this.triggerArrowRight();
+      } else if (direction === 'Enter') {
+        this.triggerEnter();
       }
+    }
+  }
 
-      // Обработка клавиши Enter
-      if (event.key === 'Enter') {
-        if (currentFocusedElement && this.focusableElements.includes(currentFocusedElement)) {
-          // Применяем визуальный эффект
-          currentFocusedElement.style.transform = 'scale(0.95)';
-          setTimeout(() => {
-            if (document.activeElement === currentFocusedElement) {
-              currentFocusedElement.style.transform = 'scale(1.05)';
-            } else {
-              currentFocusedElement.style.transform = '';
-            }
-          }, 100);
+  /**
+   * Public method to programmatically trigger Enter key behavior on the current active element
+   */
+  public triggerEnter(): void {
+    const currentElement = this.activeElement || (document.activeElement as HTMLElement);
+    this.handleEnterKey(currentElement);
+  }
 
-          // Check if this is a parent element that has children to focus
-          const navigatedToChild = this.navigateToChildren(currentFocusedElement);
+  /**
+   * Public method to programmatically trigger ArrowUp navigation from the current active element
+   */
+  public triggerArrowUp(): void {
+    const currentElement = this.activeElement || (document.activeElement as HTMLElement);
+    this.handleDirectionalNavigation(currentElement, 'ArrowUp');
+  }
 
-          // Only call the callback if we didn't navigate to a child
-          // This prevents the callback from being called when we're just navigating
-          if (!navigatedToChild && this.onSelectCallback) {
-            this.onSelectCallback(currentFocusedElement);
-          }
+  /**
+   * Public method to programmatically trigger ArrowDown navigation from the current active element
+   */
+  public triggerArrowDown(): void {
+    const currentElement = this.activeElement || (document.activeElement as HTMLElement);
+    this.handleDirectionalNavigation(currentElement, 'ArrowDown');
+  }
+
+  /**
+   * Public method to programmatically trigger ArrowLeft navigation from the current active element
+   */
+  public triggerArrowLeft(): void {
+    const currentElement = this.activeElement || (document.activeElement as HTMLElement);
+    this.handleDirectionalNavigation(currentElement, 'ArrowLeft');
+  }
+
+  /**
+   * Public method to programmatically trigger ArrowRight navigation from the current active element
+   */
+  public triggerArrowRight(): void {
+    const currentElement = this.activeElement || (document.activeElement as HTMLElement);
+    this.handleDirectionalNavigation(currentElement, 'ArrowRight');
+  }
+
+  /**
+   * Public method to programmatically return focus to the parent element
+   * of the currently focused element (if it exists)
+   */
+  public triggerBack(): void {
+    const currentElement = this.activeElement || (document.activeElement as HTMLElement);
+
+    if (!currentElement || !this.focusableElements.includes(currentElement)) {
+      return;
+    }
+
+    // Check if the current element has a parent relationship
+    const childOfValue = currentElement.getAttribute(this.childAttr);
+
+    if (!childOfValue) {
+      return; // Not a child element
+    }
+
+    // Find parent elements that match the child's parent ID
+    const parentElements = this.focusableElements.filter(
+      (el) => el.getAttribute(this.parentAttr) === childOfValue && el.offsetParent !== null
+    );
+
+    if (parentElements.length === 0) {
+      return; // No matching parent found
+    }
+
+    // Focus the parent element
+    try {
+      const parentElement = parentElements[0];
+      parentElement.focus({ preventScroll: false });
+      this.currentFocusIndex = this.focusableElements.indexOf(parentElement);
+      this.updateFocusClass(parentElement);
+    } catch (error) {
+      console.error('Error focusing parent element:', error);
+    }
+  }
+
+  /**
+   * Handles directional navigation based on arrow keys
+   * @param currentElement The currently focused element
+   * @param direction The navigation direction
+   */
+  private handleDirectionalNavigation(currentElement: HTMLElement, direction: Direction): void {
+    // Define the starting element for navigation
+    const startElement =
+      currentElement && this.focusableElements.includes(currentElement)
+        ? currentElement
+        : this.focusableElements.find((el) => el.offsetParent !== null);
+
+    if (!startElement) return; // No visible elements for navigation
+
+    // Check if this is a parent element and the key is a navigation direction that should go to children
+    const shouldNavigateToChildren = this.shouldNavigateToChildren(startElement, direction);
+
+    if (shouldNavigateToChildren) {
+      // Navigate from parent to child using arrow keys
+      const navigatedToChild = this.navigateToChildren(startElement);
+      if (navigatedToChild) {
+        return; // Successfully navigated to child, exit early
+      }
+    }
+
+    // Check for parent-child relationship navigation (child to parent)
+    const parentElement = this.checkParentNavigation(startElement, direction);
+
+    if (parentElement) {
+      try {
+        parentElement.focus({ preventScroll: false });
+        this.currentFocusIndex = this.focusableElements.indexOf(parentElement);
+        this.updateFocusClass(parentElement);
+      } catch (error) {
+        console.error('Error focusing parent element:', error);
+      }
+    } else {
+      // No parent navigation, try spatial navigation
+      const nextElement = this.findNextFocusable(startElement, direction);
+
+      if (nextElement) {
+        try {
+          nextElement.focus({ preventScroll: false });
+          this.currentFocusIndex = this.focusableElements.indexOf(nextElement);
+          this.updateFocusClass(nextElement);
+        } catch (error) {
+          console.error('Error focusing next element:', error);
         }
       }
     }
+  }
+
+  /**
+   * Handles Enter key press on an element
+   * @param currentElement The currently focused element
+   */
+  private handleEnterKey(currentElement: HTMLElement): void {
+    if (currentElement && this.focusableElements.includes(currentElement)) {
+      // Применяем визуальный эффект
+      currentElement.style.transform = 'scale(0.95)';
+      setTimeout(() => {
+        if (this.activeElement === currentElement || document.activeElement === currentElement) {
+          currentElement.style.transform = 'scale(1.05)';
+        } else {
+          currentElement.style.transform = '';
+        }
+      }, 100);
+
+      // Check if this is a parent element that has children to focus
+      const navigatedToChild = this.navigateToChildren(currentElement);
+
+      // Only call the callback if we didn't navigate to a child
+      // This prevents the callback from being called when we're just navigating
+      if (!navigatedToChild && this.onSelectCallback) {
+        this.onSelectCallback(currentElement);
+      }
+    }
+  }
+
+  /**
+   * Finds the next element to focus in the given direction
+   */
+  private findNextFocusable(currentElement: HTMLElement, direction: Direction): HTMLElement | null {
+    if (!currentElement) return null;
+
+    const currentRect = this.getRect(currentElement);
+    const currentCenter = this.getCenter(currentRect);
+
+    let bestCandidate: HTMLElement | null = null;
+    let minDistance = Infinity;
+
+    // Filter out the current element and invisible elements
+    const visibleFocusableElements = this.focusableElements.filter(
+      (el) => el !== currentElement && el.offsetParent !== null
+    );
+
+    visibleFocusableElements.forEach((candidate) => {
+      const candidateRect = this.getRect(candidate);
+      const candidateCenter = this.getCenter(candidateRect);
+
+      // Calculate the difference in center coordinates
+      const dx = candidateCenter.x - currentCenter.x;
+      const dy = candidateCenter.y - currentCenter.y;
+
+      let isSuitable = false;
+      let distance = Infinity;
+
+      switch (direction) {
+        case 'ArrowUp':
+          if (dy < 0) {
+            if (candidateRect.right > currentRect.left && candidateRect.left < currentRect.right) {
+              isSuitable = true;
+              distance = Math.abs(dy) + Math.abs(dx) * 0.3;
+              if (Math.abs(dx) < Math.min(currentRect.width, candidateRect.width) / 4) {
+                distance *= 0.8;
+              }
+            }
+          }
+          break;
+        case 'ArrowDown':
+          if (dy > 0) {
+            if (candidateRect.right > currentRect.left && candidateRect.left < currentRect.right) {
+              isSuitable = true;
+              distance = Math.abs(dy) + Math.abs(dx) * 0.3;
+              if (Math.abs(dx) < Math.min(currentRect.width, candidateRect.width) / 4) {
+                distance *= 0.8;
+              }
+            }
+          }
+          break;
+        case 'ArrowLeft':
+          if (dx < 0) {
+            if (candidateRect.bottom > currentRect.top && candidateRect.top < currentRect.bottom) {
+              isSuitable = true;
+              distance = Math.abs(dx) + Math.abs(dy) * 0.3;
+              if (Math.abs(dy) < Math.min(currentRect.height, candidateRect.height) / 4) {
+                distance *= 0.8;
+              }
+            }
+          }
+          break;
+        case 'ArrowRight':
+          if (dx > 0) {
+            if (candidateRect.bottom > currentRect.top && candidateRect.top < currentRect.bottom) {
+              isSuitable = true;
+              distance = Math.abs(dx) + Math.abs(dy) * 0.3;
+              if (Math.abs(dy) < Math.min(currentRect.height, candidateRect.height) / 4) {
+                distance *= 0.8;
+              }
+            }
+          }
+          break;
+      }
+
+      // Check if the candidate is not completely "behind" the current element
+      if (isSuitable) {
+        const projectionPoint = this.getProjection(currentRect, candidateRect, direction);
+
+        // Check if projection falls inside the candidate
+        let projectionOnCandidateAxis;
+        if (direction === 'ArrowUp' || direction === 'ArrowDown') {
+          projectionOnCandidateAxis =
+            projectionPoint >= candidateRect.left && projectionPoint <= candidateRect.right;
+        } else {
+          projectionOnCandidateAxis =
+            projectionPoint >= candidateRect.top && projectionPoint <= candidateRect.bottom;
+        }
+
+        if (!projectionOnCandidateAxis) {
+          // If the projection does not fall, the candidate may be too far
+          distance *= 1.5;
+        }
+      }
+
+      if (isSuitable && distance < minDistance) {
+        minDistance = distance;
+        bestCandidate = candidate;
+      }
+    });
+
+    return bestCandidate;
   }
 
   /**
@@ -491,9 +710,6 @@ export class FocusEngine {
       return false; // Not a parent element
     }
 
-    // Debug log to verify we're entering this method with a parent element
-    console.log(`Navigating from parent with ID: ${parentId}`);
-
     // Find child elements with this parent ID
     // Filter for visible elements - check both offsetParent and computed style
     const childElements = this.focusableElements.filter((el) => {
@@ -515,9 +731,6 @@ export class FocusEngine {
       return true;
     });
 
-    // Debug log to show how many children we found
-    console.log(`Found ${childElements.length} visible child elements`);
-
     if (childElements.length === 0) {
       // If we couldn't find any visible children, try without the extra style checks
       // as a fallback, in case the elements are just being displayed differently
@@ -525,10 +738,7 @@ export class FocusEngine {
         (el) => el.getAttribute(this.childAttr) === parentId && el.offsetParent !== null
       );
 
-      console.log(`Found ${fallbackChildren.length} fallback child elements`);
-
       if (fallbackChildren.length === 0) {
-        console.log('No children found for this parent');
         return false; // No visible children at all
       }
 
@@ -554,11 +764,9 @@ export class FocusEngine {
 
     if (lastVisitedChild && childElements.includes(lastVisitedChild)) {
       // We have a previously visited child, focus that one
-      console.log('Using previously visited child');
       targetChild = lastVisitedChild;
     } else {
       // No previously visited child, go to the first child
-      console.log('Using first child element');
       targetChild = childElements[0];
     }
 
@@ -570,7 +778,6 @@ export class FocusEngine {
           return false;
         }
 
-        console.log(`Focusing child element: ${targetChild.textContent?.trim() || 'unnamed'}`);
         targetChild.focus({ preventScroll: false });
         this.currentFocusIndex = this.focusableElements.indexOf(targetChild);
         this.updateFocusClass(targetChild);
@@ -585,110 +792,6 @@ export class FocusEngine {
     }
 
     return false;
-  }
-
-  /**
-   * Finds the next element to focus in the given direction
-   */
-  private findNextFocusable(currentElement: HTMLElement, direction: Direction): HTMLElement | null {
-    if (!currentElement) return null;
-
-    const currentRect = this.getRect(currentElement);
-    const currentCenter = this.getCenter(currentRect);
-
-    let bestCandidate: HTMLElement | null = null;
-    let minDistance = Infinity;
-
-    // Filter out the current element and invisible elements
-    const visibleFocusableElements = this.focusableElements.filter(
-      (el) => el !== currentElement && el.offsetParent !== null
-    );
-
-    visibleFocusableElements.forEach((candidate) => {
-      const candidateRect = this.getRect(candidate);
-      const candidateCenter = this.getCenter(candidateRect);
-
-      // Calculate the difference in center coordinates
-      const dx = candidateCenter.x - currentCenter.x;
-      const dy = candidateCenter.y - currentCenter.y;
-
-      let isSuitable = false;
-      let distance = Infinity;
-
-      switch (direction) {
-        case 'ArrowUp':
-          if (dy < 0) {
-            if (candidateRect.right > currentRect.left && candidateRect.left < currentRect.right) {
-              isSuitable = true;
-              distance = Math.abs(dy) + Math.abs(dx) * 0.3;
-              if (Math.abs(dx) < Math.min(currentRect.width, candidateRect.width) / 4) {
-                distance *= 0.8;
-              }
-            }
-          }
-          break;
-        case 'ArrowDown':
-          if (dy > 0) {
-            if (candidateRect.right > currentRect.left && candidateRect.left < currentRect.right) {
-              isSuitable = true;
-              distance = Math.abs(dy) + Math.abs(dx) * 0.3;
-              if (Math.abs(dx) < Math.min(currentRect.width, candidateRect.width) / 4) {
-                distance *= 0.8;
-              }
-            }
-          }
-          break;
-        case 'ArrowLeft':
-          if (dx < 0) {
-            if (candidateRect.bottom > currentRect.top && candidateRect.top < currentRect.bottom) {
-              isSuitable = true;
-              distance = Math.abs(dx) + Math.abs(dy) * 0.3;
-              if (Math.abs(dy) < Math.min(currentRect.height, candidateRect.height) / 4) {
-                distance *= 0.8;
-              }
-            }
-          }
-          break;
-        case 'ArrowRight':
-          if (dx > 0) {
-            if (candidateRect.bottom > currentRect.top && candidateRect.top < currentRect.bottom) {
-              isSuitable = true;
-              distance = Math.abs(dx) + Math.abs(dy) * 0.3;
-              if (Math.abs(dy) < Math.min(currentRect.height, candidateRect.height) / 4) {
-                distance *= 0.8;
-              }
-            }
-          }
-          break;
-      }
-
-      // Check if the candidate is not completely "behind" the current element
-      if (isSuitable) {
-        const projectionPoint = this.getProjection(currentRect, candidateRect, direction);
-
-        // Check if projection falls inside the candidate
-        let projectionOnCandidateAxis;
-        if (direction === 'ArrowUp' || direction === 'ArrowDown') {
-          projectionOnCandidateAxis =
-            projectionPoint >= candidateRect.left && projectionPoint <= candidateRect.right;
-        } else {
-          projectionOnCandidateAxis =
-            projectionPoint >= candidateRect.top && projectionPoint <= candidateRect.bottom;
-        }
-
-        if (!projectionOnCandidateAxis) {
-          // If the projection does not fall, the candidate may be too far
-          distance *= 1.5;
-        }
-      }
-
-      if (isSuitable && distance < minDistance) {
-        minDistance = distance;
-        bestCandidate = candidate;
-      }
-    });
-
-    return bestCandidate;
   }
 
   /**
@@ -758,6 +861,9 @@ export class FocusEngine {
       this.previouslyFocusedElement.classList.remove(this.focusClassName);
       this.previouslyFocusedElement = null;
     }
+
+    // Clear activeElement reference
+    this.activeElement = null;
 
     this.initialized = false;
 

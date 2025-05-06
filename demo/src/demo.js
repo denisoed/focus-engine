@@ -36,36 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize FocusEngine
   let engine = null;
 
-  // Function to show a specific category group
-  function showCategory(categoryName) {
-    // Map from parent-id to category name
-    const parentToCategoryMap = {
-      'small-items': 'small',
-      'medium-items': 'medium',
-      'large-items': 'large',
-      'wide-items': 'wide',
-      'tall-items': 'tall',
-    };
-
-    const categoryToShow = parentToCategoryMap[categoryName];
-
-    if (!categoryToShow) {
-      logEvent(`Unknown category parent: ${categoryName}`);
-      return;
-    }
-
-    // Hide all category groups first
-    document.querySelectorAll('.category-group').forEach((group) => {
-      group.removeAttribute('data-category-active');
-
-      // Check if the group belongs to the selected category
-      if (group.getAttribute('data-category') === categoryToShow) {
-        group.setAttribute('data-category-active', 'true');
-        logEvent(`Showing category: ${categoryToShow}`);
-      }
-    });
-  }
-
   // Initial setup - show all categories by default
   function showAllCategories() {
     document.querySelectorAll('.category-group').forEach((group) => {
@@ -92,14 +62,6 @@ document.addEventListener('DOMContentLoaded', () => {
       parentPosition: currentParentPosition, // Use current parent position
       onSelect: (element) => {
         logEvent(`Element selected: ${element.textContent}`);
-
-        // If a category item is selected, show that category
-        if (element.classList.contains('category-item')) {
-          const parentId = element.getAttribute('data-focus-parent');
-          if (parentId) {
-            showCategory(parentId);
-          }
-        }
       },
     });
 
@@ -162,160 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
       initializeEngine();
     });
   }
-
-  // Test function to verify parent-to-child navigation
-  function testParentToChildNavigation() {
-    logEvent('=== Running parent-to-child navigation test ===');
-
-    // First, find a parent element
-    const parentElement = document.querySelector('.category-item[data-focus-parent="small-items"]');
-    if (!parentElement) {
-      logEvent('ERROR: Could not find test parent element');
-      return;
-    }
-
-    // Test Enter key navigation
-    testEnterKeyNavigation(parentElement);
-
-    // After a delay, test arrow key navigation
-    setTimeout(() => {
-      testArrowKeyNavigation(parentElement);
-    }, 1000);
-  }
-
-  function testEnterKeyNavigation(parentElement) {
-    logEvent('--- Testing Enter key navigation ---');
-
-    // Focus the parent
-    parentElement.focus();
-    logEvent(`TEST ENTER: Focused parent element: ${parentElement.textContent.trim()}`);
-
-    // Simulate pressing Enter on the parent
-    const enterEvent = new KeyboardEvent('keydown', {
-      key: 'Enter',
-      bubbles: true,
-      cancelable: true,
-    });
-    parentElement.dispatchEvent(enterEvent);
-
-    // Check if focus moved to a child
-    setTimeout(() => {
-      const activeElement = document.activeElement;
-      logEvent(`TEST ENTER: After Enter, focused element is: ${activeElement.textContent.trim()}`);
-
-      const isChild = activeElement.getAttribute('data-focus-child-of') === 'small-items';
-      if (isChild) {
-        logEvent('TEST ENTER PASSED: Successfully navigated from parent to child with Enter key');
-      } else {
-        logEvent('TEST ENTER FAILED: Did not navigate to a child element with Enter key');
-      }
-    }, 100);
-  }
-
-  function testArrowKeyNavigation(parentElement) {
-    logEvent('--- Testing Arrow key navigation ---');
-
-    // Get the appropriate navigation key based on current parent position
-    const navigationKey = getNavigationKeyByPosition(currentParentPosition);
-
-    // First test that the correct arrow navigates to children
-    testArrowNavigation(parentElement, navigationKey, true);
-
-    // After a delay, test that the other arrows do NOT navigate to children
-    setTimeout(() => {
-      // Get a direction that shouldn't navigate
-      const wrongDirection = getOppositeDirection(navigationKey);
-      testArrowNavigation(parentElement, wrongDirection, false);
-    }, 1000);
-  }
-
-  function getNavigationKeyByPosition(position) {
-    // Return the appropriate arrow key for the current position
-    switch (position) {
-      case 'left':
-        return 'ArrowRight';
-      case 'right':
-        return 'ArrowLeft';
-      default:
-        return 'ArrowRight';
-    }
-  }
-
-  function getOppositeDirection(direction) {
-    // Return an arrow that's perpendicular to the given direction
-    switch (direction) {
-      case 'ArrowRight':
-      case 'ArrowLeft':
-        return 'ArrowDown';
-      case 'ArrowUp':
-      case 'ArrowDown':
-        return 'ArrowRight';
-      default:
-        return 'ArrowDown';
-    }
-  }
-
-  function testArrowNavigation(parentElement, arrowKey, shouldNavigateToChild) {
-    // Focus the parent again
-    parentElement.focus();
-    logEvent(`TEST ${arrowKey}: Focused parent element: ${parentElement.textContent.trim()}`);
-
-    // Simulate pressing Arrow key on the parent
-    const arrowEvent = new KeyboardEvent('keydown', {
-      key: arrowKey,
-      bubbles: true,
-      cancelable: true,
-    });
-    parentElement.dispatchEvent(arrowEvent);
-
-    // Check if focus moved as expected
-    setTimeout(() => {
-      const activeElement = document.activeElement;
-      logEvent(
-        `TEST ${arrowKey}: After ${arrowKey}, focused element is: ${activeElement.textContent.trim()}`
-      );
-
-      const isChild = activeElement.getAttribute('data-focus-child-of') === 'small-items';
-
-      if (shouldNavigateToChild) {
-        // Should navigate to child
-        if (isChild) {
-          logEvent(
-            `TEST ${arrowKey} PASSED: Successfully navigated from parent to child with ${arrowKey} key`
-          );
-        } else {
-          logEvent(
-            `TEST ${arrowKey} FAILED: Did not navigate to a child element with ${arrowKey} key`
-          );
-        }
-      } else {
-        // Should NOT navigate to child
-        const isParent =
-          activeElement === parentElement ||
-          (activeElement.classList.contains('category-item') &&
-            !activeElement.hasAttribute('data-focus-child-of'));
-
-        const isNextCategory = activeElement.classList.contains('category-item');
-
-        if (isParent || isNextCategory) {
-          logEvent(
-            `TEST ${arrowKey} PASSED: Correctly did not navigate to child element with ${arrowKey} key`
-          );
-        } else {
-          if (isChild) {
-            logEvent(
-              `TEST ${arrowKey} FAILED: Incorrectly navigated to child element with ${arrowKey} key`
-            );
-          } else {
-            logEvent(`TEST ${arrowKey} INCONCLUSIVE: Focus moved to non-child, non-parent element`);
-          }
-        }
-      }
-    }, 100);
-  }
-
-  // Run the test after a delay to ensure engine is initialized
-  setTimeout(testParentToChildNavigation, 1000);
 
   // Handle add element button
   const addElementButton = document.getElementById('add-element');
@@ -389,6 +197,118 @@ document.addEventListener('DOMContentLoaded', () => {
       logEvent('FocusEngine reinitialized');
     });
   }
+
+  // TV Remote Control Functionality
+  function initializeRemoteControl() {
+    // Get remote control buttons
+    const remoteUp = document.getElementById('remote-up');
+    const remoteDown = document.getElementById('remote-down');
+    const remoteLeft = document.getElementById('remote-left');
+    const remoteRight = document.getElementById('remote-right');
+    const remoteOk = document.getElementById('remote-ok');
+    const remoteBack = document.getElementById('remote-back');
+
+    // Helper function to simulate keyboard events (legacy approach)
+    function simulateKeyEvent(key) {
+      const event = new KeyboardEvent('keydown', {
+        key: key,
+        code: key === 'Enter' ? 'Enter' : `Arrow${key.replace('Arrow', '')}`,
+        bubbles: true,
+        cancelable: true,
+      });
+
+      document.dispatchEvent(event);
+      logEvent(`Remote button pressed: ${key}`);
+    }
+
+    // Add event listeners to buttons
+    if (remoteUp) {
+      remoteUp.addEventListener('click', () => {
+        engine.triggerArrowUp();
+        logEvent('Remote button pressed: ArrowUp (using triggerArrowUp)');
+      });
+    }
+
+    if (remoteDown) {
+      remoteDown.addEventListener('click', () => {
+        engine.triggerArrowDown();
+        logEvent('Remote button pressed: ArrowDown (using triggerArrowDown)');
+      });
+    }
+
+    if (remoteLeft) {
+      remoteLeft.addEventListener('click', () => {
+        engine.triggerArrowLeft();
+        logEvent('Remote button pressed: ArrowLeft (using triggerArrowLeft)');
+      });
+    }
+
+    if (remoteRight) {
+      remoteRight.addEventListener('click', () => {
+        engine.triggerArrowRight();
+        logEvent('Remote button pressed: ArrowRight (using triggerArrowRight)');
+      });
+    }
+
+    if (remoteOk) {
+      remoteOk.addEventListener('click', () => {
+        if (!engine) {
+          logEvent('Remote OK: FocusEngine is not initialized');
+          return;
+        }
+
+        // Use triggerEnter method
+        engine.triggerEnter();
+        logEvent('Remote button pressed: Enter (using triggerEnter)');
+
+        // Get the active element
+        const activeElement = engine.activeElement || document.activeElement;
+
+        if (activeElement && activeElement.classList.contains('focusable')) {
+          // Simulate a click on the active element
+          activeElement.click();
+          logEvent(`Remote OK: Selected ${activeElement.textContent.trim()}`);
+
+          // If element is a parent, manually trigger the category selection
+          if (activeElement.classList.contains('category-item')) {
+            const parentId = activeElement.getAttribute('data-focus-parent');
+            if (parentId) {
+              console.log('parentId', parentId);
+              // showCategory(parentId);
+            }
+          }
+        } else {
+          logEvent('Remote OK: No focusable element active');
+        }
+      });
+    }
+
+    if (remoteBack) {
+      remoteBack.addEventListener('click', () => {
+        if (!engine) {
+          logEvent('Remote Back: FocusEngine is not initialized');
+          return;
+        }
+
+        // Use the new triggerBack method
+        engine.triggerBack();
+        logEvent('Remote button pressed: Back (using triggerBack)');
+
+        // Get updated active element after back action
+        const activeElement = engine.activeElement || document.activeElement;
+        if (activeElement && activeElement.classList.contains('focusable')) {
+          logEvent(`Remote Back: Navigated to ${activeElement.textContent.trim()}`);
+        } else {
+          logEvent('Remote Back: No navigation occurred');
+        }
+      });
+    }
+
+    logEvent('TV Remote Control initialized');
+  }
+
+  // Initialize the remote control
+  initializeRemoteControl();
 
   // Detect and log all focus changes for demo purposes
   document.addEventListener('focusin', (event) => {
